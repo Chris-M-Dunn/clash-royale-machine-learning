@@ -1,0 +1,16 @@
+commands.txt
+requirements.txt
+dataset_cards/test/
+dataset_cards/train/
+dataset_cards/valid/
+dataset_units/test/
+dataset_units/train/
+dataset_units/valid/
+runs_cards/classify/train/
+runs_cards/classify/train2/*.jpg
+runs_cards/classify/train2/*.png
+runs_units/detect/train/
+runs_units/detect/train2/*.jpg
+runs_units/detect/train2/*.png
+models/
+state/
