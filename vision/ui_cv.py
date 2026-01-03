@@ -25,6 +25,14 @@ INNER_LEFT_CARD_BOX = (316-X_AXIS_PADDING, 1160, 442, 1318+Y_AXIS_PADDING)
 INNER_RIGHT_CARD_BOX = (458-X_AXIS_PADDING, 1160, 584, 1318+Y_AXIS_PADDING)
 OUTER_RIGHT_CARD_BOX = (600-X_AXIS_PADDING, 1160, 726, 1318+Y_AXIS_PADDING)
 
+CARD_LOCATIONS = {
+    "next_card": NEXT_CARD_BOX,
+    "outer_left_card": OUTER_LEFT_CARD_BOX,
+    "inner_left_card": INNER_LEFT_CARD_BOX,
+    "inner_right_card": INNER_RIGHT_CARD_BOX,
+    "outer_right_card": OUTER_RIGHT_CARD_BOX
+}
+
 # ((top pixel x, top pixel y), (bottom pixel x, bottom pixel y)) <-- elixir slot
 ELIXIR_SLOTS = [
     ((244, 1397), (244, 1410)),
@@ -38,6 +46,30 @@ ELIXIR_SLOTS = [
     ((674, 1397), (674, 1410)),
     ((730, 1397), (730, 1410)),
 ]
+
+CLASSIFICATION_MODEL = YOLO("runs_cards/classify/train2/weights/best.pt")
+
+def get_cards_in_hand():
+    detected_cards = {}
+
+    for name, (x1, y1, x2, y2) in CARD_LOCATIONS.items():
+        cropped_image = cv_image[y1:y2, x1:x2]
+
+        if cropped_image.size == 0:
+            continue
+
+        results = CLASSIFICATION_MODEL(cropped_image, verbose=False)
+
+        probabilities = results[0].probs
+        class_id = probabilities.top1
+        confidence = probabilities.top1conf
+
+        class_name = CLASSIFICATION_MODEL.names[class_id]
+        detected_cards[name] = (class_name, float(confidence))
+
+    print("\nCards in hand:")
+    for card_slot, (card_name, _) in detected_cards.items():
+        print(f"{card_slot}: {card_name}")
 
 def is_color_close(color, target, tolerance=50):
     for i in range(3):
@@ -64,48 +96,23 @@ def is_elixir_slot_filled(frame, top_pixel, bottom_pixel):
 
     return False
 
-card_locations = {
-    "next_card": NEXT_CARD_BOX,
-    "outer_left_card": OUTER_LEFT_CARD_BOX,
-    "inner_left_card": INNER_LEFT_CARD_BOX,
-    "inner_right_card": INNER_RIGHT_CARD_BOX,
-    "outer_right_card": OUTER_RIGHT_CARD_BOX
-}
-
-classification_model = YOLO("runs_cards/classify/train2/weights/best.pt")
-
-while True:
-    time.sleep(5)
-    game_screen_box = (900, 0, 1686, 1440)
-    screenshot = ImageGrab.grab(bbox=game_screen_box)
-
-    cv_image = np.array(screenshot)
-    cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
-
-    detected_cards = {}
-
-    for name, (x1, y1, x2, y2) in card_locations.items():
-        cropped_image = cv_image[y1:y2, x1:x2]
-
-        if cropped_image.size == 0:
-            continue
-
-        results = classification_model(cropped_image, verbose=False)
-
-        probabilities = results[0].probs
-        class_id = probabilities.top1
-        confidence = probabilities.top1conf
-
-        class_name = classification_model.names[class_id]
-        detected_cards[name] = (class_name, float(confidence))
-
-    print("\nCards in hand:")
-    for card_slot, (card_name, _) in detected_cards.items():
-        print(f"{card_slot}: {card_name}")
-
+def get_elixir_count():
     elixir = 0
+
     for top_pixel, bottom_pixel in ELIXIR_SLOTS:
         if is_elixir_slot_filled(cv_image, top_pixel, bottom_pixel):
             elixir += 1
 
     print(f"Elixir count: {elixir}")
+
+if __name__ == "__main__": 
+    while True:
+        time.sleep(5)
+        game_screen_box = (900, 0, 1686, 1440)
+        screenshot = ImageGrab.grab(bbox=game_screen_box)
+
+        cv_image = np.array(screenshot)
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
+
+        get_cards_in_hand()
+        get_elixir_count()
