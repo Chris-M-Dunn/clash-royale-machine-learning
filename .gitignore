@@ -13,6 +13,6 @@ runs_units/detect/train/
 runs_units/detect/train2/*.jpg
 runs_units/detect/train2/*.png
 models/
-state/
 coordinates.txt
 vision/__pycache__/
+state/__pycache__/

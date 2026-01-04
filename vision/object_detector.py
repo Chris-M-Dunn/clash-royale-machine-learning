@@ -4,13 +4,18 @@ import mss
 from ultralytics import YOLO
 import numpy as np
 import time
+import threading
+from state import GameState
 
 class ObjectDetector:
-    def __init__(self, model_path: str):
+    def __init__(self, model_path: str, game_state: GameState, lock: threading.Lock):
         self.model = YOLO(model_path)
+        self.game_state = game_state
+        self.lock = lock
         
     def run_object_detection(self, stop_event):
         time.sleep(5)
+        
         with mss.mss() as sct:
             monitor = sct.monitors[1]
             frame_number = 1
@@ -25,23 +30,24 @@ class ObjectDetector:
 
                 bots_vision = full_screen[100:1100, 930:1630]
 
-                cv2.imshow("Bots vision", bots_vision)
-
                 results = self.model(bots_vision, imgsz=1280, conf=0.25, iou=0.5, verbose=False)
+
+                detected_units = []
+                for bounding_box in results[0].boxes:
+                    class_id = int(bounding_box.cls[0])
+                    unit_name = self.model.names[class_id]
+                    detected_units.append(unit_name)
+
+                with self.lock:
+                    self.game_state.enemy_units_on_board = detected_units
+
                 annotated = results[0].plot()
-
-                """ for box in results[0].boxes:
-                    x1, y1, x2, y2 = box.xyxy[0]
-                    h = int(y2 - y1)
-                    print("box height:", h) """
-
-                cv2.imshow("With detection", annotated)
+                cv2.imshow("With Annotations", annotated)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     stop_event.set()
                     break
 
-                # print(f"Processed frame {frame_number}\n")
                 frame_number += 1 
 
         cv2.destroyAllWindows()
