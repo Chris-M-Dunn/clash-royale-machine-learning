@@ -3,7 +3,6 @@ from state import GameState
 import threading
 import time
 import os
-import sys
 
 def clear_terminal():
     if os.name == "nt":
@@ -14,9 +13,8 @@ if __name__ == "__main__":
     lock = threading.Lock()
     stop_event = threading.Event()
     
-    ui_detector = UIDetector("runs_cards/classify/train2/weights/best.pt", game_state, lock)
-    # object_detector = ObjectDetector("runs_units/detect/train2/weights/best.pt", game_state, lock)
-    object_detector = ObjectDetector("runs/detect/train2/weights/best.pt", game_state, lock)
+    ui_detector = UIDetector("classification_runs/classify/train2/weights/best.pt", game_state, lock)
+    object_detector = ObjectDetector("detection_runs/detect/train2/weights/best.pt", game_state, lock)
 
     t1 = threading.Thread(target=object_detector.run_object_detection, args=(stop_event,), daemon=True)
     t2 = threading.Thread(target=ui_detector.run_ui_detection, args=(stop_event,), daemon=True)
@@ -42,6 +40,18 @@ if __name__ == "__main__":
                 print(f"\nEnemy Units on Board:")
                 for unit in game_state.enemy_units_on_board:
                     print(f"  - {unit}")
+
+                print(f"\nEnemy Buildings on Board:")
+                for building in game_state.enemy_buildings_on_board:
+                    print(f"  - {building}")
+
+                print(f"\nAlly Units on Board:")
+                for unit in game_state.ally_units_on_board:
+                    print(f"  - {unit}")
+
+                print(f"\nAlly Buildings on Board:")
+                for building in game_state.ally_buildings_on_board:
+                    print(f"  - {building}")
 
     except KeyboardInterrupt:
         print("\nTerminating...")
