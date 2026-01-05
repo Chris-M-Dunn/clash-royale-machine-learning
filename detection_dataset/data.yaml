@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 9
+names: ['ally_building', 'ally_king_tower', 'ally_tower', 'ally_troop', 'destroyed_tower', 'enemy_building', 'enemy_king_tower', 'enemy_tower', 'enemy_troop']
+
+roboflow:
+  workspace: cr-0uibs
+  project: clash-royale-ddiwe-xioo8
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/cr-0uibs/clash-royale-ddiwe-xioo8/dataset/1

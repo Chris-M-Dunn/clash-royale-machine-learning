@@ -15,7 +15,8 @@ if __name__ == "__main__":
     stop_event = threading.Event()
     
     ui_detector = UIDetector("runs_cards/classify/train2/weights/best.pt", game_state, lock)
-    object_detector = ObjectDetector("runs_units/detect/train2/weights/best.pt", game_state, lock)
+    # object_detector = ObjectDetector("runs_units/detect/train2/weights/best.pt", game_state, lock)
+    object_detector = ObjectDetector("runs/detect/train2/weights/best.pt", game_state, lock)
 
     t1 = threading.Thread(target=object_detector.run_object_detection, args=(stop_event,), daemon=True)
     t2 = threading.Thread(target=ui_detector.run_ui_detection, args=(stop_event,), daemon=True)
