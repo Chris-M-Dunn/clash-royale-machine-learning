@@ -16,13 +16,7 @@ detection_runs/detect/train/
 detection_runs/detect/train2/*.jpg
 detection_runs/detect/train2/*.png
 
-vision/__pycache__/
-state/__pycache__/
+__pycache__/
 
-classification_model.py
-pixel_color_checker.py
-menu_navigator.py
-game_state.py
-elixir_manager.py
-detection_model.py
+test.py
 crop_debugger.py

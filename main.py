@@ -1,63 +1,67 @@
-from vision import ObjectDetector, UIDetector
-from state import GameState
+from classification_model import ClassificationModel
+from detection_model import DetectionModel
+from elixir_manager import ElixirManager
+from game_state import GameState
+from PIL import ImageGrab
 import threading
+import numpy
 import time
+import cv2
+import mss
 import os
 
 def clear_terminal():
     if os.name == "nt":
         os.system("cls")
 
-if __name__ == "__main__":
+def main():
     game_state = GameState()
     lock = threading.Lock()
     stop_event = threading.Event()
-    
-    ui_detector = UIDetector("classification_runs/classify/train2/weights/best.pt", game_state, lock)
-    object_detector = ObjectDetector("detection_runs/detect/train2/weights/best.pt", game_state, lock)
 
-    t1 = threading.Thread(target=object_detector.run_object_detection, args=(stop_event,), daemon=True)
-    t2 = threading.Thread(target=ui_detector.run_ui_detection, args=(stop_event,), daemon=True)
+    card_classifier = ClassificationModel("classification_runs/classify/train2/weights/best.pt", game_state, lock)
+    object_detector = DetectionModel("detection_runs/detect/train2/weights/best.pt", game_state, lock)
+    elixir_manager = ElixirManager(game_state, lock)
 
-    t1.start()
-    t2.start()
+    with mss.mss() as sct:
+        monitor = sct.monitors[1]
 
-    try:
-        while not stop_event.is_set():
-            time.sleep(0.2)
+        try:
+            time.sleep(3)
 
-            with lock: 
-                clear_terminal()
+            last_ui_update = 0
+            ELIXIR_INTERVAL = 2.7
 
-                print("\n----- GAME STATE -----")
+            while not stop_event.is_set():
+                now = time.time()
 
-                print(f"\nCards in Hand:")
-                for card_slot, card in game_state.cards_in_hand.items():
-                    print(f"  - {card_slot}: {card}")
+                game_screen_box = (935, 0, 1695, 1380)
+                screenshot = ImageGrab.grab(bbox=game_screen_box)
+                cv_image = numpy.array(screenshot)
+                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2BGR)
 
-                print(f"\nElixir Count: {game_state.elixir_count}")
+                object_detector.detect_objects()
+                card_classifier.classify_cards()
 
-                print(f"\nEnemy Units on Board:")
-                for unit in game_state.enemy_units_on_board:
-                    print(f"  - {unit}")
+                if now - last_ui_update >= ELIXIR_INTERVAL:
+                    elixir_manager.get_elixir_count(cv_image)
+                    last_ui_update = now
+                    
+                with lock:
+                    clear_terminal()
+                    game_state.print_game_state()
 
-                print(f"\nEnemy Buildings on Board:")
-                for building in game_state.enemy_buildings_on_board:
-                    print(f"  - {building}")
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    stop_event.set()
 
-                print(f"\nAlly Units on Board:")
-                for unit in game_state.ally_units_on_board:
-                    print(f"  - {unit}")
+                time.sleep(0.05)
 
-                print(f"\nAlly Buildings on Board:")
-                for building in game_state.ally_buildings_on_board:
-                    print(f"  - {building}")
+        except KeyboardInterrupt:
+            print("\nTerminating...")
+            stop_event.set()
 
-    except KeyboardInterrupt:
-        print("\nTerminating...")
-        stop_event.set()
+        cv2.destroyAllWindows()
+        print("Program terminated.")
 
-    t1.join()
-    t2.join()
-
-    print("Program terminated.")
+if __name__ == "__main__":
+    main()
