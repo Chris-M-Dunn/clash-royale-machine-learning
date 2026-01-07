@@ -1,10 +1,6 @@
 from ultralytics import YOLO
 from game_state import GameState
-from PIL import ImageGrab
 import threading
-import numpy
-import time
-import cv2
 
 class ClassificationModel:
     OUTER_LEFT_CARD_BOX = (160, 1130, 310, 1330)
@@ -24,11 +20,11 @@ class ClassificationModel:
         self.game_state = game_state
         self.lock = lock
 
-    def get_cards_in_hand(self, cv_image):
+    def classify_cards(self, image):
         cards_in_hand = {}
 
         for card, (x1, y1, x2, y2) in self.CARD_LOCATIONS.items():
-            cropped_image = cv_image[y1:y2, x1:x2]
+            cropped_image = image[y1:y2, x1:x2]
 
             if cropped_image.size == 0:
                 continue
@@ -43,12 +39,3 @@ class ClassificationModel:
 
         with self.lock:
             self.game_state.cards_in_hand = cards_in_hand
-
-    def classify_cards(self):
-            game_screen_box = (935, 0, 1695, 1380)
-            screenshot = ImageGrab.grab(bbox=game_screen_box)
-
-            cv_image = numpy.array(screenshot)
-            cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
-
-            self.get_cards_in_hand(cv_image)

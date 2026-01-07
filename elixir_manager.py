@@ -24,11 +24,11 @@ class ElixirManager():
         self.game_state = game_state
         self.lock = lock
 
-    def get_elixir_count(self, cv_image):
+    def get_elixir_count(self, image):
         elixir = 0
 
         for pixel in self.ELIXIR_SLOTS:
-            pixel_color = cv_image[pixel[1], pixel[0]]
+            pixel_color = image[pixel[1], pixel[0]]
 
             if self.color_checker.is_color_close(pixel_color, self.ELIXIR_PINK):
                 elixir += 1

@@ -1,31 +1,24 @@
-from ultralytics import YOLO
 from game_state import GameState
+from ultralytics import YOLO
 import threading
-import numpy
 import cv2
-import mss
+
+# game_board = full_screen[100:1100, 930:1630]
 
 class DetectionModel:
     def __init__(self, model_path: str, game_state: GameState, lock: threading.Lock):
         self.model = YOLO(model_path)
         self.game_state = game_state
         self.lock = lock
-        self.sct = mss.mss()
-        self.monitor = self.sct.monitors[1]
         self.frame_number = 0
         
-    def detect_objects(self):
+    def detect_objects(self, image):
             self.frame_number += 1
 
             if self.frame_number % 3 != 0:
                 return
 
-            full_screen = numpy.array(self.sct.grab(self.monitor))
-            full_screen = cv2.cvtColor(full_screen, cv2.COLOR_BGRA2BGR)
-
-            bots_vision = full_screen[100:1100, 930:1630]
-
-            results = self.model(bots_vision, imgsz=1280, conf=0.25, iou=0.5, verbose=False)
+            results = self.model(image, imgsz=1280, conf=0.25, iou=0.5, verbose=False)
 
             detected_enemy_units = []
             detected_enemy_buildings = []

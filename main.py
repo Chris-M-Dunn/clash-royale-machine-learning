@@ -7,8 +7,9 @@ import threading
 import numpy
 import time
 import cv2
-import mss
 import os
+
+# possibly use mss in the future for better performance
 
 def clear_terminal():
     if os.name == "nt":
@@ -23,45 +24,45 @@ def main():
     object_detector = DetectionModel("detection_runs/detect/train2/weights/best.pt", game_state, lock)
     elixir_manager = ElixirManager(game_state, lock)
 
-    with mss.mss() as sct:
-        monitor = sct.monitors[1]
+    try:
+        time.sleep(3)
 
-        try:
-            time.sleep(3)
+        last_elixir_update = 0
+        ELIXIR_INTERVAL = 2.7
 
-            last_ui_update = 0
-            ELIXIR_INTERVAL = 2.7
+        game_screen_box = (935, 0, 1695, 1380)
 
-            while not stop_event.is_set():
-                now = time.time()
+        while not stop_event.is_set():
+            now = time.time()
 
-                game_screen_box = (935, 0, 1695, 1380)
-                screenshot = ImageGrab.grab(bbox=game_screen_box)
-                cv_image = numpy.array(screenshot)
-                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGRA2BGR)
+            game_screen = ImageGrab.grab(bbox=game_screen_box)
+            converted_game_screen = numpy.array(game_screen)
+            converted_game_screen = cv2.cvtColor(converted_game_screen, cv2.COLOR_RGB2BGR)
+            game_board = converted_game_screen[100:1100, 50:715]
 
-                object_detector.detect_objects()
-                card_classifier.classify_cards()
+            object_detector.detect_objects(game_board)
+            card_classifier.classify_cards(converted_game_screen)
 
-                if now - last_ui_update >= ELIXIR_INTERVAL:
-                    elixir_manager.get_elixir_count(cv_image)
-                    last_ui_update = now
-                    
-                with lock:
-                    clear_terminal()
-                    game_state.print_game_state()
+            if now - last_elixir_update >= ELIXIR_INTERVAL:
+                elixir_manager.get_elixir_count(converted_game_screen)
+                last_elixir_update = now
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    stop_event.set()
+            with lock:
+                clear_terminal()
+                game_state.print_game_state()
 
-                time.sleep(0.05)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                stop_event.set()
+                
+            # run at 20fps
+            time.sleep(0.05)
 
-        except KeyboardInterrupt:
-            print("\nTerminating...")
-            stop_event.set()
+    except KeyboardInterrupt:
+        print("\nTerminating...")
+        stop_event.set()
 
-        cv2.destroyAllWindows()
-        print("Program terminated.")
+    cv2.destroyAllWindows()
+    print("Program terminated.")
 
 if __name__ == "__main__":
     main()
