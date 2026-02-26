@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import numpy
 
 @dataclass
 class GameState:
@@ -8,6 +9,7 @@ class GameState:
     ally_buildings_on_board: list = field(default_factory=list)
     enemy_units_on_board: list = field(default_factory=list)
     enemy_buildings_on_board: list = field(default_factory=list)
+    game_board_grid: numpy.ndarray = field(default_factory=lambda: numpy.zeros((30, 18), dtype=numpy.int8))
 
     def print_game_state(self):
         print("\n----- GAME STATE -----")
@@ -18,6 +20,14 @@ class GameState:
 
         print(f"\nElixir Count: {self.elixir_count}")
 
+        print(f"\nAlly Units on Board:")
+        for unit in self.ally_units_on_board:
+            print(f"  - {unit}")
+
+        print(f"\nAlly Buildings on Board:")
+        for building in self.ally_buildings_on_board:
+             print(f"  - {building}")
+
         print(f"\nEnemy Units on Board:")
         for unit in self.enemy_units_on_board:
             print(f"  - {unit}")
@@ -26,10 +36,5 @@ class GameState:
         for building in self.enemy_buildings_on_board:
             print(f"  - {building}")
 
-        print(f"\nAlly Units on Board:")
-        for unit in self.ally_units_on_board:
-            print(f"  - {unit}")
-
-        print(f"\nAlly Buildings on Board:")
-        for building in self.ally_buildings_on_board:
-             print(f"  - {building}")
+        print(f"\nGame Board Grid (0=empty, 1=ally unit, 2=ally building, 3=enemy unit, 4=enemy building):")
+        print(self.game_board_grid)
